@@ -1,0 +1,7 @@
+numpy==2.5.2
+scikit-learn==1.9.0
+xgboost==3.4.1
+gradio
+spacy
+textstat
+sentence-transformers
