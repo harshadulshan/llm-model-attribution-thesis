@@ -1,0 +1,11 @@
+feature,type,mean_abs_shap
+mean_sentence_length,stylometric,0.07322682075063773
+sentence_length_variance,stylometric,0.2961407661125661
+ttr,stylometric,0.4427798960464259
+hedging_frequency,stylometric,0.022248914705953752
+passive_voice_rate,stylometric,0.016614936776146172
+comma_density,stylometric,0.02107054140615668
+mean_word_length,stylometric,0.28367097934087837
+flesch_kincaid,stylometric,0.18591728216442452
+semantic_block_TOTAL (sum of 120 PCA components),semantic,2.745497469515399
+semantic_PER-COMPONENT average,semantic,0.02287914557929499

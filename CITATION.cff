@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "If you use this code or data, please cite the thesis below."
+title: "Which Model Leaves the Last Fingerprint? Stylometric Attribution Survival Under LLM-Based Rewriting Pressure"
+type: software
+authors:
+  - family-names: "Dulshan"
+    given-names: "Hollu Pathirage Harsha"
+    affiliation: "Faculty of Computing, NSBM Green University, Sri Lanka"
+repository-code: "https://github.com/harshadulshan/llm-model-attribution-thesis"
+license: MIT
+date-released: 2026-10-21
+abstract: "Code, data, trained models and a live demo for a BSc thesis measuring how much of the stylometric fingerprint of ChatGPT, Claude, Gemini and Grok survives LLM-based rewriting."
+keywords:
+  - stylometry
+  - authorship attribution
+  - large language models
+  - SHAP

@@ -114,5 +114,5 @@ print(f"OOD Light (~40% edit) macro F1:  {np.mean(ood_light_f1_scores):.4f} (+/-
 print(f"OOD Heavy (~65% edit) macro F1:  {np.mean(ood_heavy_f1_scores):.4f} (+/- {np.std(ood_heavy_f1_scores):.4f})")
 print(f"\nChance baseline (4 classes): 0.2500")
 print(f"Sample-to-feature ratio check: {len(train_idx)} samples / {75+8} features = {len(train_idx)/(75+8):.1f}:1")
-print("\nThese numbers should match Table in Chapter 4 exactly (same data, same seed, same everything).")
-print("If they don't match, STOP and tell Claude before deploying anything — something upstream changed.")
+print("\nReported in the thesis: 0.7061 / 0.5301 / 0.4017 (original / light / heavy) with the library versions pinned in requirements.txt.")
+print("Small differences are expected if you run other versions of scikit-learn, XGBoost or NumPy.")

@@ -1,0 +1,32 @@
+# Python and local tooling
+.venv/
+.venv-*/
+venv/
+__pycache__/
+*.pyc
+.gradio/
+.ipynb_checkpoints/
+
+# Secrets: never commit keys or tokens
+.env
+.env.*
+*.key
+*secret*
+*api_key*
+# Scripts that call hosted model APIs may contain keys; keep them out unless cleaned
+00_check_models.py
+03_llm_rewriting.py
+
+# Local-only material that does not belong in the repository
+raw_sources/
+Chapters and final thesis/
+Final Presentation/
+Proposal/
+Proposal Presentation/
+papers for publish/
+critation/
+simple test/
+github_upload/
+*.docx
+Screenshot*.png
+*.exe
