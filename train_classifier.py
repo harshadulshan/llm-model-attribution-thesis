@@ -5,8 +5,9 @@ from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.decomposition import PCA
 from sklearn.ensemble import RandomForestClassifier, VotingClassifier
 from sklearn.neural_network import MLPClassifier
-from sklearn.metrics import f1_score, classification_report, confusion_matrix
+from sklearn.metrics import f1_score
 from xgboost import XGBClassifier
+import pickle
 
 print("Loading features and embeddings...")
 df = pd.read_csv("features_extracted.csv")
@@ -24,10 +25,6 @@ original_df = df[df['edit_condition'] == 'original'].reset_index(drop=True)
 light_df = df[df['edit_condition'] == 'light'].reset_index(drop=True)
 heavy_df = df[df['edit_condition'] == 'heavy'].reset_index(drop=True)
 
-print(f"\nOriginal (training pool): {len(original_df)}")
-print(f"Light (OOD test): {len(light_df)}")
-print(f"Heavy (OOD test): {len(heavy_df)}")
-
 X_stylo_orig = original_df[STYLO_COLS].values
 X_emb_orig = embeddings[original_df['emb_idx'].values]
 y_orig = original_df['model_label'].values
@@ -40,12 +37,15 @@ X_stylo_heavy = heavy_df[STYLO_COLS].values
 X_emb_heavy = embeddings[heavy_df['emb_idx'].values]
 y_heavy = heavy_df['model_label'].values
 
+N_PCA = 75  # FIXED at 75 to match Chapter 2/3's stated ~83-dim vector and 11.6:1 ratio argument
+
 skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 fold_f1_scores = []
 ood_light_f1_scores = []
 ood_heavy_f1_scores = []
+fold_pipelines = []  # save each fold's fitted pieces for reuse by the SHAP script
 
-print("\n=== Running 5-fold stratified cross-validation (trained on 0% original only) ===")
+print(f"\n=== Running 5-fold stratified CV (trained on 0% original only, PCA fixed at {N_PCA} components) ===")
 
 for fold, (train_idx, test_idx) in enumerate(skf.split(X_stylo_orig, y_orig), 1):
     stylo_train, stylo_test = X_stylo_orig[train_idx], X_stylo_orig[test_idx]
@@ -60,7 +60,7 @@ for fold, (train_idx, test_idx) in enumerate(skf.split(X_stylo_orig, y_orig), 1)
     emb_train_scaled = emb_scaler.transform(emb_train)
     emb_test_scaled = emb_scaler.transform(emb_test)
 
-    pca = PCA(n_components=0.95, random_state=42).fit(emb_train_scaled)
+    pca = PCA(n_components=N_PCA, random_state=42).fit(emb_train_scaled)
     emb_train_pca = pca.transform(emb_train_scaled)
     emb_test_pca = pca.transform(emb_test_scaled)
 
@@ -70,8 +70,7 @@ for fold, (train_idx, test_idx) in enumerate(skf.split(X_stylo_orig, y_orig), 1)
     xgb = XGBClassifier(n_estimators=200, max_depth=6, learning_rate=0.05,
                          random_state=42, eval_metric='mlogloss')
     rf = RandomForestClassifier(n_estimators=200, max_features='sqrt', random_state=42)
-    mlp = MLPClassifier(hidden_layer_sizes=(256,128,64), alpha=0.01,
-                         max_iter=300, random_state=42)
+    mlp = MLPClassifier(hidden_layer_sizes=(256,128,64), alpha=0.01, max_iter=300, random_state=42)
 
     ensemble = VotingClassifier(estimators=[('xgb', xgb), ('rf', rf), ('mlp', mlp)], voting='soft')
     ensemble.fit(X_train_final, y_train)
@@ -79,7 +78,8 @@ for fold, (train_idx, test_idx) in enumerate(skf.split(X_stylo_orig, y_orig), 1)
     preds = ensemble.predict(X_test_final)
     fold_f1 = f1_score(y_test, preds, average='macro')
     fold_f1_scores.append(fold_f1)
-    print(f"Fold {fold}: macro F1 = {fold_f1:.4f} (PCA components: {pca.n_components_})")
+    explained_var = np.sum(pca.explained_variance_ratio_)
+    print(f"Fold {fold}: macro F1 = {fold_f1:.4f} (PCA={N_PCA} comps, {explained_var*100:.1f}% variance retained)")
 
     light_stylo_scaled = stylo_scaler.transform(X_stylo_light[test_idx])
     light_emb_scaled = emb_scaler.transform(X_emb_light[test_idx])
@@ -99,10 +99,18 @@ for fold, (train_idx, test_idx) in enumerate(skf.split(X_stylo_orig, y_orig), 1)
 
     print(f"  -> OOD Light F1: {ood_light_f1:.4f} | OOD Heavy F1: {ood_heavy_f1:.4f}")
 
-print("\n=== FINAL RESULTS (mean across 5 folds) ===")
+    # Save fold 1's complete fitted pipeline for the SHAP script (Issue 2 fix)
+    if fold == 1:
+        with open("fold1_pipeline.pkl", "wb") as f:
+            pickle.dump({
+                'ensemble': ensemble, 'stylo_scaler': stylo_scaler, 'emb_scaler': emb_scaler,
+                'pca': pca, 'train_idx': train_idx, 'test_idx': test_idx
+            }, f)
+        print("  -> Saved fold 1's fitted pipeline to fold1_pipeline.pkl (for SHAP script)")
+
+print("\n=== FINAL RESULTS (mean across 5 folds, PCA=75) ===")
 print(f"Baseline (0% original) macro F1: {np.mean(fold_f1_scores):.4f} (+/- {np.std(fold_f1_scores):.4f})")
 print(f"OOD Light (~40% edit) macro F1:  {np.mean(ood_light_f1_scores):.4f} (+/- {np.std(ood_light_f1_scores):.4f})")
 print(f"OOD Heavy (~65% edit) macro F1:  {np.mean(ood_heavy_f1_scores):.4f} (+/- {np.std(ood_heavy_f1_scores):.4f})")
 print(f"\nChance baseline (4 classes): 0.2500")
-print(f"\nDrop from baseline to light: {np.mean(fold_f1_scores) - np.mean(ood_light_f1_scores):.4f}")
-print(f"Drop from baseline to heavy: {np.mean(fold_f1_scores) - np.mean(ood_heavy_f1_scores):.4f}")
+print(f"Sample-to-feature ratio check: {len(train_idx)} samples / {75+8} features = {len(train_idx)/(75+8):.1f}:1")
