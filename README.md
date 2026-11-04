@@ -228,8 +228,8 @@ Everything from `features_extracted.csv` onwards can be re-run from this reposit
 ```bash
 python verify_alignment.py        # sanity check: original / light / heavy rows line up
 python train_all_folds.py         # 5-fold training, writes fold1-5_pipeline.pkl
-python ablation_study_v2.py       # feature-type ablation
-python shap_analysis_v3.py        # SHAP survival (needs the fold 1 pipeline and `pip install shap`)
+python ablation_study.py       # feature-type ablation
+python shap_analysis.py        # SHAP survival (needs the fold 1 pipeline and `pip install shap`)
 python confusion_matrices.py      # confusion matrices (needs `pip install matplotlib seaborn`)
 ```
 
@@ -255,9 +255,9 @@ The rewriting step itself (the call to GPT-OSS-120B) and the raw human corpora u
 ├── extract_features.py                 stylometric features
 ├── extract_embeddings.py               semantic embeddings
 ├── train_all_folds.py                  5-fold training, saves all five pipelines (used by app.py)
-├── train_classifier_v2.py              earlier version that saves fold 1 only
-├── ablation_study_v2.py                stylometric-only / semantic-only / combined
-├── shap_analysis_v3.py                 SHAP feature-survival analysis
+├── train_classifier.py              earlier version that saves fold 1 only
+├── ablation_study.py                stylometric-only / semantic-only / combined
+├── shap_analysis.py                 SHAP feature-survival analysis
 ├── confusion_matrices.py               confusion matrices for original / light / heavy
 ├── verify_alignment.py                 data-integrity check
 ├── fold1_pipeline.pkl … fold5_pipeline.pkl
